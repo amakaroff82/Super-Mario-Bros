@@ -9,9 +9,9 @@
 			body {
 				font-family: Helvetica, Arial, sans-serif;
 				font-size: 12px;
-				background-color: #888;
+				background-color: #FFF;
 				margin: 0px;
-				overflow: hidden;
+				/*overflow: hidden;*/
 			}
 			#edit {
 				position: absolute;
@@ -32,8 +32,21 @@
 		<!--<script src="js/three.min.js"></script>-->
 		<script src="js/app.js"></script>
 		<script src="js/lodash.js"></script>
+		
+		<div class="controls">
+			<div id="helper">Open file: <span>O</span></div>
+			<div id="helper">Save to storage: <span>S</span></div>
+			<div id="helper">Load from storage: <span>L</span></div>
+			<div id="helper">Map mode: <span>M</span></div>
+			<div id="helper">IU mode: <span>U</span></div>
+			<br>			
+			<div>Level: <span id="stage"></span></div>
+			<div>Mode: <span id="mode"></span></div>
+			<div>Storage: <span id="storage"></span></div>
+			<div>Background color: <span id="bg-color"></span></div>
+		</div>
 
-		<div id="view" style="height: 800px; width: 2000px;"></div>
+		<div id="view" ></div>
 		
 		<div style="display:none;">
 			<img id="test-image-1-1" src="1-1.png" />

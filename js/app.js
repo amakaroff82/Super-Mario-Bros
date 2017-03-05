@@ -4,11 +4,18 @@
 	var fragmentSize = 1024 / 4;  // 1 pixel
 	
 	var maxY = 15;
+	var xxx = 0.0;
+	
+	var gain = 0;
+	
+	var mainCanvas = null;
+	var ctx = null;
 	
 	var transparent = [0,0,0,255];
 	
-	
-	
+	var mode = 0;
+		// 0 - edit map
+		// 1 - edit UI
 
 	function getData(elementId){
 		
@@ -18,7 +25,8 @@
 		var canvas = document.createElement('canvas');
 		canvas.width = img.width;
 		canvas.height = img.height;
-		canvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height);
+		var _ctx = canvas.getContext('2d');
+		_ctx.drawImage(img, 0, 0, img.width, img.height);
 		
 		var worldW = canvas.width / squareSize;
 		var worldH = Math.max(canvas.height / squareSize, maxY);
@@ -58,12 +66,10 @@
 		
 		
 		_.forEach(fragments, function(f){
-			if(f.data.length < 2){
+			if(f.instances < 2){
 				f.badSample = true;
 			}
 		});
-		
-		
 		
 		
 		return {
@@ -115,43 +121,190 @@
 		return -1;
 	}
 	
-
 	
-	window.onload = function(){
-		
-		var stage = getData("test-image-1-1");
+	function open(stg, level){		
+
+		xxx = 0.0;
+	
+		var s = (stg ) + "-" + (level);
+		document.getElementById("stage").innerHTML = s;
+		window.stage = getData("test-image-" + s);
 		
 		var canvas = document.createElement('canvas');
-		canvas.width = stage.x * squareSize;
-		canvas.height = stage.y * squareSize;
+		
+		mainCanvas = canvas;
+		ctx = canvas.getContext('2d');
+		
+		canvas.width = squareSize * (maxY + 4);
+		canvas.height = squareSize * maxY;
 
-		document.getElementById("view").appendChild(canvas)
+		if(document.getElementById("view").children.length > 0){
+			var  child = document.getElementById("view").children[0]
+			document.getElementById("view").removeChild(child);
+		}
 		
+		document.getElementById("view").appendChild(canvas);
 		
-		
-		var ctx = canvas.getContext('2d');
-		
-		//var imageData = ctx.createImageData(squareSize, squareSize);
-		
+
+
+
+/*		var ctx = canvas.getContext('2d');
 		
 		for(var x = 0; x < stage.x; x++){
 			for(var y = 0; y < stage.y; y++){
-				var i = stage.map[x][y];
+				var i = stage.map[x][y];		
+				
 				var imageData = stage.fragments[i].imageData;
 				
 				ctx.putImageData(imageData, x * squareSize, y * squareSize);
+				if(stage.fragments[i].badSample){
+					ctx.rect(x * squareSize, y * squareSize, squareSize, squareSize);
+					ctx.stroke();					
+				}
+			}
+		}		
+*/		
+	}
+	function saveData(key, data){
+		var json = JSON.stringify(data);
+		localStorage.setItem(key, json);
+	}
+	
+	function loadData(key){
+		var json = localStorage.getItem(key);
+		return JSON.parse(json);
+	}		
+
+	document.onclick = function(evt){
+		
+		var offset = Math.floor(xxx / squareSize);
+		var dist = Math.floor((offset * squareSize) - xxx);
+
+		
+		var x = Math.floor((evt.offsetX - dist) / squareSize) + offset;
+		var y = Math.floor(evt.offsetY / squareSize);
+		
+		if(!window.stage.map)
+			return;
+		
+		if(x >= window.stage.map.length || y >= window.stage.map[0].length)
+			return;
+		
+		
+		if(evt.ctrlKey){
+			window.stage.map[x][y]--;
+			if(window.stage.map[x][y] < 0)
+				window.stage.map[x][y] = window.stage.fragments.length - 1;
+		}else{
+			window.stage.map[x][y]++;
+			if(window.stage.map[x][y] >= window.stage.fragments.length)
+				window.stage.map[x][y] = 0;
+		}
+
+		//ctx = mainCanvas.getContext('2d');
+		
+		/*var i = window.stage.map[x][y];
+		var imageData = window.stage.fragments[i].imageData;
+		ctx.putImageData(imageData, x * squareSize, y * squareSize);
+*/
+			
+		/*if(window.stage.fragments[i].badSample){
+			ctx.rect(x * squareSize, y * squareSize, squareSize, squareSize);
+			ctx.stroke();					
+		}*/
+	}
+
+	
+	document.onkeydown = function(evt){
+		if(evt.keyCode == 83) { // save
+			
+		}
+		if(evt.keyCode == 76) { // load
+			
+		}
+
+		if(evt.keyCode == 79) { // open
+		
+			var level = +window.prompt("Select level (1-8)");			
+			if(typeof(level) == "number" && level > 0 && level < 9 ){
+				var stg = +window.prompt("Select stage (1-4)");	
+				if(typeof(stg) == "number" && stg > 0 && stg < 5 ){
+					open(stg, level);
+				}				
 			}
 		}
+				
+		if(evt.keyCode == 77) { // map
+			setMode(0);
+		}
+		if(evt.keyCode == 85) { // UI
+			setMode(1);
+		}
 		
-		return;
-		for(var x = 0; x < 8; x++){
-			for(var y = 0; y < 4; y++){
-				var stage = getData("test-image-" + (x + 1) + "-" + (y + 1))
-				//console.log(count);
-			}	
-		}	
-		
+		if(evt.keyCode == 39) { // Right
+			gain += 0.03;
+			if(gain > 1)
+				gain = 1
+		}
+		if(evt.keyCode == 37) { // Left
+			gain -= 0.02;
+			if(gain < 0.0)
+				gain = 0.0
+		}
 	}
+
+	function setMode(m){
+		mode = m;
+		
+		document.getElementById("mode").innerHTML = (m == 0) ? "Map" : "UI"
+	}
+	
+	
+
+	render = function(){		
+	
+		requestAnimationFrame(render);		
+		
+		if(!mainCanvas){
+			return;
+		}
+		
+		
+		
+		xxx += gain;
+		
+		var offset = Math.floor(xxx / squareSize);
+		var dist = Math.floor((offset * squareSize) - xxx);
+		
+		
+		console.log(offset + " | " + dist) 
+		
+		for(var x = 0; x < maxY + 5; x++){
+			for(var y = 0; y < maxY; y++){
+				var i = window.stage.map[offset + x][y];		
+				
+				var imageData = window.stage.fragments[i].imageData;
+				
+				ctx.putImageData(imageData, x * squareSize + dist, y * squareSize);
+
+				if(mode == 0){
+					if(window.stage.fragments[i].badSample){
+						ctx.beginPath();
+						ctx.lineWidth=1;
+						ctx.strokeStyle="black";
+						ctx.rect(x * squareSize + dist , y * squareSize , squareSize - 1, squareSize - 1);
+						ctx.stroke();
+					}
+				}
+			}
+		}		
+	}	
+	
+	window.onload = function(){
+		setMode(0);
+	}
+	
+	render();
 	
 
 })();
