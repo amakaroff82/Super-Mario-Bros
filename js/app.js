@@ -175,44 +175,7 @@
 		return JSON.parse(json);
 	}		
 
-	document.onclick = function(evt){
-		
-		var offset = Math.floor(xxx / squareSize);
-		var dist = Math.floor((offset * squareSize) - xxx);
 
-		
-		var x = Math.floor((evt.offsetX - dist) / squareSize) + offset;
-		var y = Math.floor(evt.offsetY / squareSize);
-		
-		if(!window.stage.map)
-			return;
-		
-		if(x >= window.stage.map.length || y >= window.stage.map[0].length)
-			return;
-		
-		
-		if(evt.ctrlKey){
-			window.stage.map[x][y]--;
-			if(window.stage.map[x][y] < 0)
-				window.stage.map[x][y] = window.stage.fragments.length - 1;
-		}else{
-			window.stage.map[x][y]++;
-			if(window.stage.map[x][y] >= window.stage.fragments.length)
-				window.stage.map[x][y] = 0;
-		}
-
-		//ctx = mainCanvas.getContext('2d');
-		
-		/*var i = window.stage.map[x][y];
-		var imageData = window.stage.fragments[i].imageData;
-		ctx.putImageData(imageData, x * squareSize, y * squareSize);
-*/
-			
-		/*if(window.stage.fragments[i].badSample){
-			ctx.rect(x * squareSize, y * squareSize, squareSize, squareSize);
-			ctx.stroke();					
-		}*/
-	}
 
 	
 	document.onkeydown = function(evt){
@@ -229,7 +192,7 @@
 			if(typeof(level) == "number" && level > 0 && level < 9 ){
 				var stg = +window.prompt("Select stage (1-4)");	
 				if(typeof(stg) == "number" && stg > 0 && stg < 5 ){
-					open(stg, level);
+					open(level, stg);
 				}				
 			}
 		}
@@ -261,23 +224,38 @@
 	
 	
 
+	var lastTime = new Date().getTime();
 	render = function(){		
 	
-		requestAnimationFrame(render);		
+		requestAnimationFrame(render);			
+		
+		var currTime = new Date().getTime();
+		
+		
+		var step = (currTime - lastTime)
+		
+		lastTime = currTime;
+		
 		
 		if(!mainCanvas){
 			return;
 		}
 		
+		console.log(step / 20) 
 		
 		
-		xxx += gain;
+		xxx += (gain * (step / 10));
+		
+		
+		
+		if(xxx > ((window.stage.x  * squareSize) - (maxY + 5) * squareSize)){
+			xxx = (window.stage.x  * squareSize) - (maxY + 5) * squareSize;
+		}
 		
 		var offset = Math.floor(xxx / squareSize);
 		var dist = Math.floor((offset * squareSize) - xxx);
 		
 		
-		console.log(offset + " | " + dist) 
 		
 		for(var x = 0; x < maxY + 5; x++){
 			for(var y = 0; y < maxY; y++){
@@ -302,6 +280,55 @@
 	
 	window.onload = function(){
 		setMode(0);
+		
+		
+		
+		
+		
+		document.getElementById("view").onclick = function(evt){
+			
+			if(evt.target.nodeName != "CANVAS"){
+				return;
+			}
+		
+			var offset = Math.floor(xxx / squareSize);
+			var dist = Math.floor((offset * squareSize) - xxx);
+
+			
+			var x = Math.floor((evt.offsetX - dist) / squareSize) + offset;
+			var y = Math.floor(evt.offsetY / squareSize);
+			
+			if(!window.stage.map)
+				return;
+			
+			if(x >= window.stage.map.length || y >= window.stage.map[0].length)
+				return;
+			
+			
+			if(evt.ctrlKey){
+				window.stage.map[x][y]--;
+				if(window.stage.map[x][y] < 0)
+					window.stage.map[x][y] = window.stage.fragments.length - 1;
+			}else{
+				window.stage.map[x][y]++;
+				if(window.stage.map[x][y] >= window.stage.fragments.length)
+					window.stage.map[x][y] = 0;
+			}
+
+			//ctx = mainCanvas.getContext('2d');
+			
+			/*var i = window.stage.map[x][y];
+			var imageData = window.stage.fragments[i].imageData;
+			ctx.putImageData(imageData, x * squareSize, y * squareSize);
+		*/
+				
+			/*if(window.stage.fragments[i].badSample){
+				ctx.rect(x * squareSize, y * squareSize, squareSize, squareSize);
+				ctx.stroke();					
+			}*/
+		}
+			
+		
 	}
 	
 	render();
