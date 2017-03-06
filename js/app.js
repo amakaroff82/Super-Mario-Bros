@@ -134,6 +134,7 @@
 		
 		mainCanvas = canvas;
 		ctx = canvas.getContext('2d');
+		ctx.imageSmoothingEnabled = true;
 		
 		canvas.width = squareSize * (maxY + 4);
 		canvas.height = squareSize * maxY;
