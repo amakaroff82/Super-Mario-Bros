@@ -124,6 +124,7 @@
 	
 	function open(stg, level){		
 
+		gain = 0;
 		xxx = 0.0;
 	
 		var s = (stg ) + "-" + (level);
@@ -204,16 +205,37 @@
 		if(evt.keyCode == 85) { // UI
 			setMode(1);
 		}
-		
-		if(evt.keyCode == 39) { // Right
-			gain += 0.03;
-			if(gain > 1)
-				gain = 1
+		if(evt.keyCode == 71) { // Game
+			setMode(2);
 		}
-		if(evt.keyCode == 37) { // Left
-			gain -= 0.02;
-			if(gain < 0.0)
-				gain = 0.0
+		
+		if(mode == 0 || mode == 1) // UI or Map
+		{
+			if(evt.keyCode == 39) { // Right
+				if(gain < 0)
+					gain = 0;
+				else
+					gain = 2;
+			}
+			if(evt.keyCode == 37) { // Left
+				if(gain > 0)
+					gain = 0;
+				else
+					gain = -2;
+			}
+		}
+		if(mode == 2) // Game
+		{
+			if(evt.keyCode == 39) { // Right
+				gain += 0.03;
+				if(gain > 1)
+					gain = 1
+			}
+			if(evt.keyCode == 37) { // Left
+				gain -= 0.02;
+				if(gain < 0.0)
+					gain = 0.0
+			}
 		}
 	}
 
@@ -269,9 +291,9 @@
 				if(mode == 0){
 					if(window.stage.fragments[i].badSample){
 						ctx.beginPath();
-						ctx.lineWidth=1;
+						ctx.lineWidth=0.3;
 						ctx.strokeStyle="black";
-						ctx.rect(x * squareSize + dist , y * squareSize , squareSize - 1, squareSize - 1);
+						ctx.rect(x * squareSize + dist + 0.5, y * squareSize +0.5, squareSize - 1, squareSize - 1);
 						ctx.stroke();
 					}
 				}
