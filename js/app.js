@@ -9,13 +9,42 @@
 	var gain = 0;
 	
 	var mainCanvas = null;
+	
 	var ctx = null;
+	var map = [];
 	
 	var transparent = [0,0,0,255];
 	
 	var mode = 0;
 		// 0 - edit map
 		// 1 - edit UI
+		// 2 - game mode
+	
+	var stats = null;
+		
+	function init(){
+		var canvas = document.createElement('canvas');
+		canvas.className = "main-canvas";
+		mainCanvas = canvas;
+
+		ctx = canvas.getContext('2d');
+		ctx.imageSmoothingEnabled = false;
+		
+		canvas.width = squareSize * (maxY + 4);
+		canvas.height = squareSize * maxY;
+		
+		var sprites = document.createElement('canvas');
+		sprites.className = "sprites";
+		sprites.width = squareSize * 4;
+		sprites.height = squareSize * maxY;
+		document.getElementById("view").appendChild(sprites);
+		document.getElementById("view").appendChild(canvas);
+			 
+		stats = new Stats();
+		stats.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+		document.body.appendChild( stats.dom );
+
+	}
 
 	function getData(elementId){
 		
@@ -23,6 +52,8 @@
 		
 		var img = document.getElementById(elementId);
 		var canvas = document.createElement('canvas');
+		
+				
 		canvas.width = img.width;
 		canvas.height = img.height;
 		var _ctx = canvas.getContext('2d');
@@ -31,14 +62,14 @@
 		var worldW = canvas.width / squareSize;
 		var worldH = Math.max(canvas.height / squareSize, maxY);
 
-		var map = [];
+		map = [];
+
 		for(var x = 0; x < worldW; x++){
 			var line = [];
 			for(var y = 0; y < worldH; y++){
 			
-				var imageData = canvas.getContext('2d').getImageData(x * squareSize, y * squareSize, squareSize, squareSize);
-				var pixelData = pack(imageData.data);
-					
+				var imageData = _ctx.getImageData(x * squareSize, y * squareSize, squareSize, squareSize);
+				var pixelData = pack(imageData.data);					
 				
 					//debugger;
 				var index = findFragment(fragments, pixelData);
@@ -129,25 +160,14 @@
 	
 		var s = (stg ) + "-" + (level);
 		document.getElementById("stage").innerHTML = s;
-		window.stage = getData("test-image-" + s);
+		window.currentStage = getData("test-image-" + s);
 		
-		var canvas = document.createElement('canvas');
+	
 		
-		mainCanvas = canvas;
-		ctx = canvas.getContext('2d');
-		ctx.imageSmoothingEnabled = true;
-		
-		canvas.width = squareSize * (maxY + 4);
-		canvas.height = squareSize * maxY;
-
-		if(document.getElementById("view").children.length > 0){
+	/*if(document.getElementById("view").children.length > 0){
 			var  child = document.getElementById("view").children[0]
 			document.getElementById("view").removeChild(child);
-		}
-		
-		document.getElementById("view").appendChild(canvas);
-		
-
+		}*/
 
 
 /*		var ctx = canvas.getContext('2d');
@@ -248,14 +268,15 @@
 	
 
 	var lastTime = new Date().getTime();
+	
 	render = function(){		
 	
-		requestAnimationFrame(render);			
+		requestAnimationFrame(render);		
 		
-		var currTime = new Date().getTime();
+		stats.begin();
 		
-		
-		var step = (currTime - lastTime)
+		var currTime = new Date().getTime();		
+		var step = (currTime - lastTime);
 		
 		lastTime = currTime;
 		
@@ -269,44 +290,42 @@
 		
 		xxx += (gain * (step / 10));
 		
-		
-		
-		if(xxx > ((window.stage.x  * squareSize) - (maxY + 5) * squareSize)){
-			xxx = (window.stage.x  * squareSize) - (maxY + 5) * squareSize;
-		}
-		
-		var offset = Math.floor(xxx / squareSize);
-		var dist = Math.floor((offset * squareSize) - xxx);
-		
-		
-		
-		for(var x = 0; x < maxY + 5; x++){
-			for(var y = 0; y < maxY; y++){
-				var i = window.stage.map[offset + x][y];		
-				
-				var imageData = window.stage.fragments[i].imageData;
-				
-				ctx.putImageData(imageData, x * squareSize + dist, y * squareSize);
+		if(window.currentStage){
+			if(xxx > ((window.currentStage.x  * squareSize) - (maxY + 5) * squareSize)){
+				xxx = (window.currentStage.x  * squareSize) - (maxY + 5) * squareSize;
+			}
+			
+			var offset = Math.floor(xxx / squareSize);
+			var dist = Math.floor((offset * squareSize) - xxx);
+			
+			for(var x = 0; x < maxY + 5; x++){
+				for(var y = 0; y < maxY; y++){
+					var i = window.currentStage.map[offset + x][y];		
+					
+					var imageData = window.currentStage.fragments[i].imageData;
+					
+					ctx.putImageData(imageData, x * squareSize + dist, y * squareSize);
 
-				if(mode == 0){
-					if(window.stage.fragments[i].badSample){
-						ctx.beginPath();
-						ctx.lineWidth=0.3;
-						ctx.strokeStyle="black";
-						ctx.rect(x * squareSize + dist + 0.5, y * squareSize +0.5, squareSize - 1, squareSize - 1);
-						ctx.stroke();
+					if(mode == 0){
+						if(window.currentStage.fragments[i].badSample){
+							ctx.beginPath();
+							ctx.lineWidth=0.3;
+							ctx.strokeStyle="black";
+							ctx.rect(x * squareSize + dist + 0.5, y * squareSize +0.5, squareSize - 1, squareSize - 1);
+							ctx.stroke();
+						}
 					}
 				}
-			}
-		}		
+			}	
+		}
+
+		stats.end();		
 	}	
 	
 	window.onload = function(){
+		init();
 		setMode(0);
-		
-		
-		
-		
+		render();
 		
 		document.getElementById("view").onclick = function(evt){
 			
@@ -321,31 +340,31 @@
 			var x = Math.floor((evt.offsetX - dist) / squareSize) + offset;
 			var y = Math.floor(evt.offsetY / squareSize);
 			
-			if(!window.stage.map)
+			if(!window.currentStage)
 				return;
 			
-			if(x >= window.stage.map.length || y >= window.stage.map[0].length)
+			if(x >= window.currentStage.map.length || y >= window.currentStage.map[0].length)
 				return;
 			
 			
 			if(evt.ctrlKey){
-				window.stage.map[x][y]--;
-				if(window.stage.map[x][y] < 0)
-					window.stage.map[x][y] = window.stage.fragments.length - 1;
+				window.currentStage.map[x][y]--;
+				if(window.currentStage.map[x][y] < 0)
+					window.currentStage.map[x][y] = window.currentStage.fragments.length - 1;
 			}else{
-				window.stage.map[x][y]++;
-				if(window.stage.map[x][y] >= window.stage.fragments.length)
-					window.stage.map[x][y] = 0;
+				window.currentStage.map[x][y]++;
+				if(window.currentStage.map[x][y] >= window.currentStage.fragments.length)
+					window.currentStage.map[x][y] = 0;
 			}
 
 			//ctx = mainCanvas.getContext('2d');
 			
-			/*var i = window.stage.map[x][y];
-			var imageData = window.stage.fragments[i].imageData;
+			/*var i = window.currentStage.map[x][y];
+			var imageData = window.currentStage.fragments[i].imageData;
 			ctx.putImageData(imageData, x * squareSize, y * squareSize);
 		*/
 				
-			/*if(window.stage.fragments[i].badSample){
+			/*if(window.currentStage.fragments[i].badSample){
 				ctx.rect(x * squareSize, y * squareSize, squareSize, squareSize);
 				ctx.stroke();					
 			}*/
@@ -354,7 +373,6 @@
 		
 	}
 	
-	render();
-	
+
 
 })();
